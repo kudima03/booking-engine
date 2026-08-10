@@ -89,7 +89,7 @@ is placed for the caller.
 ```
 GET    /users
 GET    /users/current            PATCH /users/current      (name, surname, phone)
-GET    /users/{id}               PATCH /users/{id}         DELETE /users/{id}
+GET    /users/{id}               PATCH /users/{id}
 POST   /users/{userId}/block     DELETE /users/{userId}/block
 POST   /users/{userId}/roles/{role}   DELETE /users/{userId}/roles/{role}
 ```

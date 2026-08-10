@@ -124,6 +124,12 @@ Blocking sets an indefinite lockout and refreshes the security stamp, which stop
 in-process without consulting the store. Access tokens therefore expire after fifteen minutes, so a
 blocked user loses access at their next refresh at the latest.
 
+### Users are blocked, never deleted
+
+There is no endpoint to remove a user account; blocking is the only way to cut one off. A hard
+delete would leave every `Booking.UserId` that pointed at them dangling with no way to resolve it,
+since that column crosses into a database EF Core does not manage here.
+
 ## Authorization
 
 | Area | Anonymous | User | Admin |
@@ -133,7 +139,7 @@ blocked user loses access at their next refresh at the latest.
 | Write the catalogue | ✗ | ✗ | ✔ |
 | Create, read, change, delete **own** bookings | ✗ | ✔ | ✔ |
 | Act on **anyone's** bookings | ✗ | ✗ | ✔ |
-| List, edit, block, assign roles, delete users | ✗ | ✗ | ✔ |
+| List, edit, block, assign roles to users | ✗ | ✗ | ✔ |
 | Read and edit own profile | ✗ | ✔ | ✔ |
 
 Catalogue controllers carry `[Authorize(Roles = Admin)]` at class level and open individual reads

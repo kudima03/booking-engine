@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using BookingEngine.Api;
 using BookingEngine.Api.Middlewares;
 using BookingEngine.Api.MigrationsManagers;
@@ -17,7 +18,13 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 
-builder.Services.AddControllers();
+// Enums travel as their names, matching how BookingStatus is stored and keeping
+// DayOfWeek readable. Numbers are still accepted on the way in.
+builder
+    .Services.AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())
+    );
 
 builder.Services.AddSingleton<ExceptionHandlingMiddleware>();
 
@@ -67,6 +74,8 @@ builder.Services.AddHostedService<AuthContextMigrationsManager>();
 builder.Services.AddHostedService<IdentitySeeder>();
 
 builder.Services.AddScoped<AvailabilityService>();
+
+builder.Services.AddScoped<BookingService>();
 
 builder.Services.AddOutputCache();
 

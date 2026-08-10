@@ -10,7 +10,7 @@ namespace BookingEngine.Domain.Models;
 /// </remarks>
 /// <param name="Id">Unique identifier of the opening hours entry (UUID v4).</param>
 /// <param name="ResourceId">Reference to the resource these hours apply to.</param>
-/// <param name="DayOfWeek">Day of the week, <c>0</c> for Sunday through <c>6</c> for Saturday.</param>
+/// <param name="DayOfWeek">Day of the week, <c>"Sunday"</c> through <c>"Saturday"</c>.</param>
 /// <param name="StartTime">UTC time the resource opens, e.g. <c>"09:00:00"</c>.</param>
 /// <param name="EndTime">UTC time the resource closes, e.g. <c>"17:00:00"</c>.</param>
 public sealed record OpeningHours(

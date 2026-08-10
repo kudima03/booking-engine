@@ -1,4 +1,7 @@
 using BookingEngine.Api;
+using BookingEngine.Api.MigrationsManagers;
+using BookingEngine.Infrastructure.Bookings;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -10,6 +13,18 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddControllers();
+
+builder.Services.AddDbContext<BookingDbContext>(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("BookingDb"),
+        contextOptions =>
+            contextOptions
+                .MigrationsAssembly("BookingEngine.Infrastructure")
+                .EnableRetryOnFailure()
+    )
+);
+
+builder.Services.AddHostedService<BookingContextMigrationsManager>();
 
 builder.Services.AddOutputCache();
 

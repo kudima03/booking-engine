@@ -150,30 +150,6 @@ public sealed class UsersEndpoints(
     }
 
     /// <summary>
-    /// Deletes the specified user account.
-    /// </summary>
-    /// <remarks>
-    /// Bookings held by the user are not removed, because they live in a different database.
-    /// </remarks>
-    /// <param name="id">The unique identifier (UUID) of the user to delete.</param>
-    /// <response code="200">User deleted successfully.</response>
-    /// <response code="401">The request carries no valid access token.</response>
-    /// <response code="403">The caller is not an administrator.</response>
-    /// <response code="404">No user exists with the specified identifier.</response>
-    /// <response code="500">An unexpected server error occurred.</response>
-    [HttpDelete("{id:guid}")]
-    [Authorize(Roles = KnownRoles.Admin)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ErrorResponse>(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType<ErrorResponse>(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType<ErrorResponse>(StatusCodes.Status404NotFound)]
-    [ProducesResponseType<ErrorResponse>(StatusCodes.Status500InternalServerError)]
-    public async Task Delete(Guid id)
-    {
-        Require(await userManager.DeleteAsync(await RequireAsync(id)));
-    }
-
-    /// <summary>
     /// Blocks the specified user.
     /// </summary>
     /// <remarks>

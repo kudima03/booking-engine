@@ -284,7 +284,7 @@ public sealed record UsersEndpointsTests
     }
 
     [Fact]
-    public async Task ShouldDeleteUserWhenCallerIsAdministrator()
+    public async Task ShouldNotExposeAWayToHardDeleteAUser()
     {
         (HttpClient client, _, _) = await _factory.AuthenticateAsUserAsync();
         Guid id = (await CurrentAsync(client)).GetProperty("id").GetGuid();
@@ -292,19 +292,16 @@ public sealed record UsersEndpointsTests
 
         using HttpClient admin = await _factory.AuthenticateAsAdminAsync();
 
-        using (
-            HttpResponseMessage deleted = await admin.DeleteAsync(
-                new Uri($"/users/{id}", UriKind.Relative)
-            )
-        )
-        {
-            Assert.Equal(HttpStatusCode.OK, deleted.StatusCode);
-        }
-
-        using HttpResponseMessage missing = await admin.GetAsync(
+        using HttpResponseMessage response = await admin.DeleteAsync(
             new Uri($"/users/{id}", UriKind.Relative)
         );
 
-        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
+
+        using HttpResponseMessage stillThere = await admin.GetAsync(
+            new Uri($"/users/{id}", UriKind.Relative)
+        );
+
+        Assert.Equal(HttpStatusCode.OK, stillThere.StatusCode);
     }
 }

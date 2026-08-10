@@ -1,6 +1,7 @@
 using BookingEngine.Api;
 using BookingEngine.Api.Middlewares;
 using BookingEngine.Api.MigrationsManagers;
+using BookingEngine.ApplicationCore;
 using BookingEngine.Infrastructure.Auth;
 using BookingEngine.Infrastructure.Bookings;
 using Microsoft.AspNetCore.Authentication.BearerToken;
@@ -64,6 +65,8 @@ builder.Services.AddHostedService<BookingContextMigrationsManager>();
 builder.Services.AddHostedService<AuthContextMigrationsManager>();
 
 builder.Services.AddHostedService<IdentitySeeder>();
+
+builder.Services.AddScoped<AvailabilityService>();
 
 builder.Services.AddOutputCache();
 

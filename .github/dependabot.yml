@@ -1,0 +1,18 @@
+version: 2
+updates:
+- package-ecosystem: nuget
+  directories:
+    - "src/BookingEngine.Domain"
+    - "src/BookingEngine.Infrastructure"
+    - "src/BookingEngine.ApplicationCore"
+    - "src/BookingEngine.Api"
+    - "src/Tests/BookingEngine.Domain.Tests"
+    - "src/Tests/BookingEngine.Infrastructure.Tests"
+    - "src/Tests/BookingEngine.ApplicationCore.Tests"
+    - "src/Tests/BookingEngine.Api.Tests"
+  schedule:
+    interval: daily
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: weekly

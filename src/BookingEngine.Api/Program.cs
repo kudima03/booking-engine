@@ -1,4 +1,5 @@
 using BookingEngine.Api;
+using BookingEngine.Api.Middlewares;
 using BookingEngine.Api.MigrationsManagers;
 using BookingEngine.Infrastructure.Auth;
 using BookingEngine.Infrastructure.Bookings;
@@ -16,6 +17,10 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddControllers();
+
+builder.Services.AddSingleton<ExceptionHandlingMiddleware>();
+
+builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddDbContext<BookingDbContext>(options =>
     options.UseNpgsql(
@@ -70,6 +75,8 @@ if (builder.Environment.IsDevelopment())
 }
 
 WebApplication app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseOutputCache();
 

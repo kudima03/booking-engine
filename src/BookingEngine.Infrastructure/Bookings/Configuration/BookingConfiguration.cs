@@ -28,11 +28,13 @@ public sealed record BookingConfiguration : IEntityTypeConfiguration<Booking>
             .IsRequired()
             .HasConversion(v => v.ToUniversalTime(), v => v);
 
+        // Restrict, not Cascade: a booking is a record of what happened, and it must
+        // survive the resource it was made against being deleted later.
         _ = builder
             .HasOne<Resource>()
             .WithMany()
             .HasForeignKey(x => x.ResourceId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Serves the availability read inside the booking transaction.
         _ = builder.HasIndex(x => new { x.ResourceId, x.StartsAt });

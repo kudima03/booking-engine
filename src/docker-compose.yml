@@ -10,6 +10,8 @@ services:
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__BookingDb: Host=booking-db;Database=booking;Username=admin;Password=secret;
       ConnectionStrings__AuthDb: Host=auth-db;Database=auth;Username=admin;Password=secret;
+      Identity__Admin__Email: admin@booking-engine.local
+      Identity__Admin__Password: Adm1n!Password
     depends_on:
       - booking-db
       - auth-db

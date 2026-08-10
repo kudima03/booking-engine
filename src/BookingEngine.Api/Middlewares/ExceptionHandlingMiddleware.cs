@@ -72,11 +72,9 @@ public sealed partial record ExceptionHandlingMiddleware(
 
     private static int ResolveStatusCode(Exception ex)
     {
-        // A serialization failure that outlived the execution strategy's retries means the
-        // caller genuinely lost the race, so it is a conflict rather than a server error.
         return ex switch
         {
-            _ when IsSerializationFailure(ex) => StatusCodes.Status409Conflict,
+            _ when IsConflict(ex) => StatusCodes.Status409Conflict,
             BookingConflictException or DbUpdateConcurrencyException =>
                 StatusCodes.Status409Conflict,
             ForbiddenException => StatusCodes.Status403Forbidden,
@@ -87,15 +85,30 @@ public sealed partial record ExceptionHandlingMiddleware(
         };
     }
 
-    private static bool IsSerializationFailure(Exception exception)
+    /// <summary>
+    /// Recognises the PostgreSQL failures that mean "the request conflicts with the current
+    /// state" rather than "the server is broken".
+    /// </summary>
+    /// <remarks>
+    /// A serialization failure only reaches here once the execution strategy has exhausted its
+    /// retries, which means the caller genuinely lost the race. Constraint violations are
+    /// conflicts by definition: a duplicate name, or a row still referenced by another.
+    /// </remarks>
+    private static bool IsConflict(Exception exception)
     {
-        for (Exception? current = exception; current is not null; current = current.InnerException)
+        for (
+            Exception? current = exception;
+            current is not null;
+            current = current.InnerException
+        )
         {
             if (
                 current is PostgresException
                 {
                     SqlState: PostgresErrorCodes.SerializationFailure
-                        or PostgresErrorCodes.DeadlockDetected,
+                        or PostgresErrorCodes.DeadlockDetected
+                        or PostgresErrorCodes.UniqueViolation
+                        or PostgresErrorCodes.ForeignKeyViolation,
                 }
             )
             {

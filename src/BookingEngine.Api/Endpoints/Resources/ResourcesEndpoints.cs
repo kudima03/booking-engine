@@ -1,5 +1,6 @@
 using BookingEngine.Api.Endpoints.Resources.Models;
 using BookingEngine.Api.Middlewares;
+using BookingEngine.ApplicationCore;
 using BookingEngine.Domain.Exceptions;
 using BookingEngine.Domain.Models;
 using BookingEngine.Infrastructure.Auth;
@@ -24,8 +25,17 @@ namespace BookingEngine.Api.Endpoints.Resources;
 [Route("resources")]
 [Tags("Resources")]
 [Authorize(Roles = KnownRoles.Admin)]
-public sealed class ResourcesEndpoints(BookingDbContext dbContext) : ControllerBase
+public sealed class ResourcesEndpoints(
+    BookingDbContext dbContext,
+    AvailabilityService availability,
+    TimeProvider timeProvider
+) : ControllerBase
 {
+    /// <summary>
+    /// The widest window the availability endpoint will compute in one request.
+    /// </summary>
+    private static readonly TimeSpan MaxAvailabilityWindow = TimeSpan.FromDays(90);
+
     /// <summary>
     /// Returns all resources as a streaming collection.
     /// </summary>
@@ -125,6 +135,51 @@ public sealed class ResourcesEndpoints(BookingDbContext dbContext) : ControllerB
             .Where(x => x.ResourceId == resourceId)
             .OrderBy(x => x.StartsAt)
             .AsAsyncEnumerable();
+    }
+
+    /// <summary>
+    /// Returns the slots of the specified resource that are free to book.
+    /// </summary>
+    /// <remarks>
+    /// Slots are the resource's opening hours sliced into <c>SlotDuration</c> intervals,
+    /// minus its blackouts and confirmed bookings, and clamped to the resource's minimum
+    /// notice and maximum horizon. A returned slot is exactly what
+    /// <c>POST /bookings</c> accepts as a period.
+    /// </remarks>
+    /// <param name="resourceId">The unique identifier (UUID v4) of the resource.</param>
+    /// <param name="from">Earliest instant of interest, e.g. <c>2026-01-01T00:00:00Z</c>.</param>
+    /// <param name="to">
+    /// Latest instant of interest. Must be later than <paramref name="from" />, and no more
+    /// than 90 days after it.
+    /// </param>
+    /// <param name="cancellationToken">Token to cancel the asynchronous operation.</param>
+    /// <returns>The free slots, ordered by start.</returns>
+    /// <response code="200">Availability computed successfully.</response>
+    /// <response code="400">The window is empty, reversed, or wider than 90 days.</response>
+    /// <response code="404">No resource exists with the specified identifier.</response>
+    /// <response code="500">An unexpected server error occurred.</response>
+    [HttpGet("{resourceId:guid}/availability")]
+    [AllowAnonymous]
+    [ProducesResponseType<IEnumerable<AvailabilitySlot>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status500InternalServerError)]
+    public async Task<IReadOnlyCollection<AvailabilitySlot>> NestedAvailability(
+        Guid resourceId,
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to,
+        CancellationToken cancellationToken
+    )
+    {
+        ValidateWindow(from, to);
+
+        return await availability.SlotsAsync(
+            resourceId,
+            from.ToUniversalTime(),
+            to.ToUniversalTime(),
+            timeProvider.GetUtcNow(),
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -286,6 +341,21 @@ public sealed class ResourcesEndpoints(BookingDbContext dbContext) : ControllerB
         _ = await dbContext
             .Resources.Where(x => x.Id == id)
             .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    private static void ValidateWindow(DateTimeOffset from, DateTimeOffset to)
+    {
+        if (from >= to)
+        {
+            throw new ArgumentException("'from' must be earlier than 'to'.");
+        }
+
+        if ((to - from) > MaxAvailabilityWindow)
+        {
+            throw new ArgumentException(
+                $"The window must not exceed {MaxAvailabilityWindow.TotalDays} days."
+            );
+        }
     }
 
     private async Task<Resource> RequireAsync(Guid id, CancellationToken cancellationToken)

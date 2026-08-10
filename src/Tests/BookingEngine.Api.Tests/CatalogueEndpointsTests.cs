@@ -383,6 +383,20 @@ public sealed record CatalogueEndpointsTests
     }
 
     [Fact]
+    public async Task ShouldReturn409WhenDeletingResourceTypeStillInUse()
+    {
+        using HttpClient admin = await _factory.AuthenticateAsAdminAsync();
+        Guid typeId = await admin.CreateResourceTypeAsync();
+        _ = await admin.CreateResourceAsync(typeId);
+
+        using HttpResponseMessage response = await admin.DeleteAsync(
+            new Uri($"/resource-types/{typeId}", UriKind.Relative)
+        );
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
     public async Task ShouldSucceedWhenDeletingSomethingThatDoesNotExist()
     {
         using HttpClient admin = await _factory.AuthenticateAsAdminAsync();

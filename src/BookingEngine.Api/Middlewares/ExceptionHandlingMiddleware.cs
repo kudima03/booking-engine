@@ -93,6 +93,10 @@ public sealed partial record ExceptionHandlingMiddleware(
     /// A serialization failure only reaches here once the execution strategy has exhausted its
     /// retries, which means the caller genuinely lost the race. Constraint violations are
     /// conflicts by definition: a duplicate name, or a row still referenced by another.
+    /// <see cref="PostgresErrorCodes.RestrictViolation" /> is the code PostgreSQL raises for an
+    /// `ON DELETE RESTRICT` foreign key, as opposed to
+    /// <see cref="PostgresErrorCodes.ForeignKeyViolation" /> for `NO ACTION` ones checked at the
+    /// end of the statement; both mean the same thing here, so both are conflicts.
     /// </remarks>
     private static bool IsConflict(Exception exception)
     {
@@ -108,7 +112,8 @@ public sealed partial record ExceptionHandlingMiddleware(
                     SqlState: PostgresErrorCodes.SerializationFailure
                         or PostgresErrorCodes.DeadlockDetected
                         or PostgresErrorCodes.UniqueViolation
-                        or PostgresErrorCodes.ForeignKeyViolation,
+                        or PostgresErrorCodes.ForeignKeyViolation
+                        or PostgresErrorCodes.RestrictViolation,
                 }
             )
             {

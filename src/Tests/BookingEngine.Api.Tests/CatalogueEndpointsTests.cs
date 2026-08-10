@@ -397,6 +397,54 @@ public sealed record CatalogueEndpointsTests
     }
 
     [Fact]
+    public async Task ShouldReturn409WhenDeletingResourceWithBookingHistory()
+    {
+        using HttpClient admin = await _factory.AuthenticateAsAdminAsync();
+        Guid resourceId = await admin.CreateResourceAsync();
+
+        _ = await admin.CreateOpeningHoursAsync(
+            resourceId,
+            DayOfWeek.Thursday,
+            new TimeOnly(9, 0),
+            new TimeOnly(11, 0)
+        );
+
+        DateTimeOffset midnight = new(
+            DateOnly.FromDateTime(DateTime.UtcNow).AddDays(7),
+            TimeOnly.MinValue,
+            TimeSpan.Zero
+        );
+
+        while (midnight.DayOfWeek != DayOfWeek.Thursday)
+        {
+            midnight = midnight.AddDays(1);
+        }
+
+        DateTimeOffset startsAt = midnight.AddHours(9);
+
+        using (
+            HttpResponseMessage booked = await admin.PostAsJsonAsync(
+                new Uri("/bookings", UriKind.Relative),
+                new
+                {
+                    resourceId,
+                    startsAt,
+                    endsAt = startsAt.AddMinutes(30),
+                }
+            )
+        )
+        {
+            _ = booked.EnsureSuccessStatusCode();
+        }
+
+        using HttpResponseMessage response = await admin.DeleteAsync(
+            new Uri($"/resources/{resourceId}", UriKind.Relative)
+        );
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
     public async Task ShouldSucceedWhenDeletingSomethingThatDoesNotExist()
     {
         using HttpClient admin = await _factory.AuthenticateAsAdminAsync();

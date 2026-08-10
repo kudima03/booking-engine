@@ -1,6 +1,7 @@
 using BookingEngine.Domain.Models;
 using BookingEngine.Infrastructure.Bookings;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace BookingEngine.Infrastructure.Tests;
 
@@ -149,7 +150,7 @@ public sealed record BookingDbContextTests
     }
 
     [Fact]
-    public async Task ShouldCascadeDeleteBookingsWhenResourceIsRemoved()
+    public async Task ShouldRestrictResourceDeletionWhenBookingsExist()
     {
         await using BookingDbContext dbContext = _fixture.NewContext();
         Resource resource = await NewResourceAsync(dbContext);
@@ -166,9 +167,11 @@ public sealed record BookingDbContextTests
         _ = dbContext.Bookings.Add(booking);
         _ = await dbContext.SaveChangesAsync();
 
-        _ = await dbContext.Resources.Where(x => x.Id == resource.Id).ExecuteDeleteAsync();
+        _ = await Assert.ThrowsAsync<PostgresException>(
+            () => dbContext.Resources.Where(x => x.Id == resource.Id).ExecuteDeleteAsync()
+        );
 
-        Assert.False(await dbContext.Bookings.AnyAsync(x => x.Id == booking.Id));
+        Assert.True(await dbContext.Bookings.AnyAsync(x => x.Id == booking.Id));
     }
 
     [Fact]

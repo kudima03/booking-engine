@@ -8,8 +8,8 @@ on:
       - '.github/**'
 
 env:
-  COVERAGE_WARNING_THRESHOLD: 70
-  COVERAGE_THRESHOLD: 15
+  COVERAGE_WARNING_THRESHOLD: 80
+  COVERAGE_THRESHOLD: 30
 
 jobs:
   build:

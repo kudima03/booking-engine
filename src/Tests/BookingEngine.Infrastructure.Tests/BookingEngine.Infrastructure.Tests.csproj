@@ -19,7 +19,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Testcontainers.PostgreSql" Version="4.13.0" />
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.14.0" />
     <!-- TODO(#22): remove once Testcontainers ships SSH.NET >= 2026.0.0 by default (fixed on develop via https://github.com/testcontainers/testcontainers-dotnet/pull/1739, not yet released) -->
     <PackageReference Include="SSH.NET" Version="2026.0.0" />
   </ItemGroup>

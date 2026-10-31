@@ -6,6 +6,14 @@ updates:
     - "src/BookingEngine.Infrastructure"
     - "src/BookingEngine.ApplicationCore"
     - "src/BookingEngine.Api"
+  schedule:
+    interval: daily
+  groups:
+    production:
+      patterns:
+        - "*"
+- package-ecosystem: nuget
+  directories:
     - "src/Tests/BookingEngine.Domain.Tests"
     - "src/Tests/BookingEngine.Infrastructure.Tests"
     - "src/Tests/BookingEngine.ApplicationCore.Tests"
